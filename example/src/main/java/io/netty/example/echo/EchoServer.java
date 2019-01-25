@@ -31,7 +31,7 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 
 /**
- * Echoes back any received data from a client.
+ * Netty 服务器，回写收到的消息
  */
 public final class EchoServer {
 
@@ -39,7 +39,7 @@ public final class EchoServer {
     static final int PORT = Integer.parseInt(System.getProperty("port", "8007"));
 
     public static void main(String[] args) throws Exception {
-        // Configure SSL.
+        // 配置 ssl
         final SslContext sslCtx;
         if (SSL) {
             SelfSignedCertificate ssc = new SelfSignedCertificate();
@@ -48,35 +48,41 @@ public final class EchoServer {
             sslCtx = null;
         }
 
-        // Configure the server.
+        // 配置 acceptor 线程池和工作线程池。
+        // acceptor 线程池线程数量为1，用来 accept 获取客户端连接
+        // 工作线程池处理 Channel 就绪事件
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
+        // 自定义的 ChannelHanlder
         final EchoServerHandler serverHandler = new EchoServerHandler();
         try {
+            // 服务器启动服务类
             ServerBootstrap b = new ServerBootstrap();
-            b.group(bossGroup, workerGroup)
-             .channel(NioServerSocketChannel.class)
-             .option(ChannelOption.SO_BACKLOG, 100)
-             .handler(new LoggingHandler(LogLevel.INFO))
+            b.group(bossGroup, workerGroup) // 设置线程池
+             .channel(NioServerSocketChannel.class) // 设置 Channel 类型是 NioServerSocketChannel
+             .option(ChannelOption.SO_BACKLOG, 100) // 设置 HTTP 协议中 backlog 大小为 100
+             .handler(new LoggingHandler(LogLevel.INFO)) // 添加 ChannelHandler
              .childHandler(new ChannelInitializer<SocketChannel>() {
+                 // 服务器为每一个客户端连接分配 Channel，在 initChannel() 方法中为该 Channel 添加 ChannerHandler
                  @Override
                  public void initChannel(SocketChannel ch) throws Exception {
+                     // 获取 ChannelPipeline
                      ChannelPipeline p = ch.pipeline();
                      if (sslCtx != null) {
                          p.addLast(sslCtx.newHandler(ch.alloc()));
                      }
-                     //p.addLast(new LoggingHandler(LogLevel.INFO));
+                     // 向 ChannelPipeline 最后添加自定义的 ChannelHander
                      p.addLast(serverHandler);
                  }
              });
 
-            // Start the server.
+            // 绑定端口，对外提供服务
             ChannelFuture f = b.bind(PORT).sync();
 
-            // Wait until the server socket is closed.
+            // 等待所有的连接关闭
             f.channel().closeFuture().sync();
         } finally {
-            // Shut down all event loops to terminate all threads.
+            // 释放连接池资源
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
         }

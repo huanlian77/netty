@@ -20,25 +20,36 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
 /**
- * Handler implementation for the echo server.
+ * Netty 服务器自定义 ChannelHandler
  */
 @Sharable
 public class EchoServerHandler extends ChannelInboundHandlerAdapter {
 
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        ctx.write(msg);
-    }
+	/**
+	 * 每当从客户端读取数据会触发该方法
+	 */
+	@Override
+	public void channelRead(ChannelHandlerContext ctx, Object msg) {
+		// 当读取数据时，回写给客户端，但是没有立即响应给客户端，调用 flush() 后才响应给客户端
+		ctx.write(msg);
+	}
 
-    @Override
-    public void channelReadComplete(ChannelHandlerContext ctx) {
-        ctx.flush();
-    }
+	/**
+	 * 当读取完客户端发送过来的数据，会触发该方法
+	 */
+	@Override
+	public void channelReadComplete(ChannelHandlerContext ctx) {
+		// 把 ChannelHandlerContext 中回写给客户端的数据立即响应
+		ctx.flush();
+	}
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        // Close the connection when an exception is raised.
-        cause.printStackTrace();
-        ctx.close();
-    }
+	/**
+	 * 出现异常时，会触发该方法
+	 */
+	@Override
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+		cause.printStackTrace();
+		// 释放资源
+		ctx.close();
+	}
 }
