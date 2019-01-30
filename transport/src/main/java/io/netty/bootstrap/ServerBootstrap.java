@@ -139,12 +139,16 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
 
     @Override
     void init(Channel channel) throws Exception {
+        // 获取 Channel 可选项
         final Map<ChannelOption<?>, Object> options = options0();
+        // Channel 设置可选项，用一个 Channel 配置项对象来保存
         synchronized (options) {
             setChannelOptions(channel, options, logger);
         }
 
+        // 获取 Channel 属性集合
         final Map<AttributeKey<?>, Object> attrs = attrs0();
+        // Channel 设置属性
         synchronized (attrs) {
             for (Entry<AttributeKey<?>, Object> e: attrs.entrySet()) {
                 @SuppressWarnings("unchecked")
@@ -153,6 +157,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
             }
         }
 
+        // 获取 ChannelPipeline
         ChannelPipeline p = channel.pipeline();
 
         final EventLoopGroup currentChildGroup = childGroup;
@@ -166,15 +171,19 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
             currentChildAttrs = childAttrs.entrySet().toArray(newAttrArray(0));
         }
 
+        // 添加 ChannelInitializer 对象到 ChannelPipeline ,用于后续初始化 ChannelHandler 到 ChannelPipeline 中
+        // 当初始化完成时，ChannelInitializer 这个特殊的 ChannelHandler 会从 ChannelPipeline 中移除
         p.addLast(new ChannelInitializer<Channel>() {
             @Override
             public void initChannel(final Channel ch) throws Exception {
                 final ChannelPipeline pipeline = ch.pipeline();
+                // 添加 ChannelHandler 到 ChannelPipeline 中
                 ChannelHandler handler = config.handler();
                 if (handler != null) {
                     pipeline.addLast(handler);
                 }
 
+                // 添加 ServerBootstrapAcceptor 到 ChannelPipeline 中
                 ch.eventLoop().execute(new Runnable() {
                     @Override
                     public void run() {

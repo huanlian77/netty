@@ -30,6 +30,10 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 
+import java.net.InetSocketAddress;
+import java.util.Collections;
+import java.util.concurrent.ConcurrentMap;
+
 /**
  * Netty 服务器，回写收到的消息
  */
@@ -39,6 +43,7 @@ public final class EchoServer {
     static final int PORT = Integer.parseInt(System.getProperty("port", "8007"));
 
     public static void main(String[] args) throws Exception {
+
         // 配置 ssl
         final SslContext sslCtx;
         if (SSL) {
@@ -48,10 +53,11 @@ public final class EchoServer {
             sslCtx = null;
         }
 
-        // 配置 acceptor 线程池和工作线程池。
-        // acceptor 线程池线程数量为1，用来 accept 获取客户端连接
-        // 工作线程池处理 Channel 就绪事件
+
+        // 创建两个 EventLoopGroup 线程组
+        // 创建 bossGroup 线程组用于服务器接受客户端连接，线程组中线程数为1，表示只需要1个线程
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+        // 创建 workerGroup 线程组用于 SocketChannel 的数据读写
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         // 自定义的 ChannelHanlder
         final EchoServerHandler serverHandler = new EchoServerHandler();

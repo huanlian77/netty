@@ -17,6 +17,7 @@ package io.netty.channel;
 
 import io.netty.util.NettyRuntime;
 import io.netty.util.concurrent.DefaultThreadFactory;
+import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.EventExecutorChooserFactory;
 import io.netty.util.concurrent.MultithreadEventExecutorGroup;
 import io.netty.util.internal.SystemPropertyUtil;
@@ -73,6 +74,12 @@ public abstract class MultithreadEventLoopGroup extends MultithreadEventExecutor
         return new DefaultThreadFactory(getClass(), Thread.MAX_PRIORITY);
     }
 
+    /**
+     * super.next() 返回 EventExecutor
+     *
+     * 例如使用的是 NioEventLoopGroup 线程组，其实返回的是 {@link io.netty.channel.nio.NioEventLoop}，该类即是 {@link EventExecutor}
+     * 实现类，又是 {@link EventLoop} 实现类，所以 super.next() 返回的是 EventExecutor 也可以转成 EventLoop。
+     */
     @Override
     public EventLoop next() {
         return (EventLoop) super.next();
@@ -81,6 +88,9 @@ public abstract class MultithreadEventLoopGroup extends MultithreadEventExecutor
     @Override
     protected abstract EventLoop newChild(Executor executor, Object... args) throws Exception;
 
+    /**
+     * next() 获取 EventLoop，然后把 channel 注册到 EventLoop
+     */
     @Override
     public ChannelFuture register(Channel channel) {
         return next().register(channel);

@@ -480,8 +480,10 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
             return promise;
         }
 
+        // 找到 ctx
         final AbstractChannelHandlerContext next = findContextOutbound();
         EventExecutor executor = next.executor();
+        // 调用 invokeBind() 进行端口绑定
         if (executor.inEventLoop()) {
             next.invokeBind(localAddress, promise);
         } else {

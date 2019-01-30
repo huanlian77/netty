@@ -132,6 +132,9 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
         return new DefaultThreadFactory(getClass());
     }
 
+    /**
+     * 从 EventExecutorChooser 中随机获取 EventExecutor
+     */
     @Override
     public EventExecutor next() {
         return chooser.next();
