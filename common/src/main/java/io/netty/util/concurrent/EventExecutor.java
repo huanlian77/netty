@@ -31,42 +31,37 @@ public interface EventExecutor extends EventExecutorGroup {
     EventExecutor next();
 
     /**
-     * Return the {@link EventExecutorGroup} which is the parent of this {@link EventExecutor},
+     * EventLoop 所属 EventLoopGroup
      */
     EventExecutorGroup parent();
 
     /**
-     * Calls {@link #inEventLoop(Thread)} with {@link Thread#currentThread()} as argument
+     * 当前线程是否在 EventLoop 中
      */
     boolean inEventLoop();
 
     /**
-     * Return {@code true} if the given {@link Thread} is executed in the event loop,
-     * {@code false} otherwise.
+     * 指定线程是否在 EventLoop 中
      */
     boolean inEventLoop(Thread thread);
 
     /**
-     * Return a new {@link Promise}.
+     * 创建 Promise
      */
     <V> Promise<V> newPromise();
 
     /**
-     * Create a new {@link ProgressivePromise}.
+     * 创建 ProgressivePromise
      */
     <V> ProgressivePromise<V> newProgressivePromise();
 
     /**
-     * Create a new {@link Future} which is marked as succeeded already. So {@link Future#isSuccess()}
-     * will return {@code true}. All {@link FutureListener} added to it will be notified directly. Also
-     * every call of blocking methods will just return without blocking.
+     * 创建结果成功的 Future，isSuccess() 返回 true，通知所有添加到该 future 的 listener
      */
     <V> Future<V> newSucceededFuture(V result);
 
     /**
-     * Create a new {@link Future} which is marked as failed already. So {@link Future#isSuccess()}
-     * will return {@code false}. All {@link FutureListener} added to it will be notified directly. Also
-     * every call of blocking methods will just return without blocking.
+     * 创建结果成功的 Future，isSuccess() 返回 false，通知所有添加到该 future 的 listener
      */
     <V> Future<V> newFailedFuture(Throwable cause);
 }

@@ -30,6 +30,9 @@ import java.util.concurrent.ThreadFactory;
 /**
  * Abstract base class for {@link EventLoopGroup} implementations that handles their tasks with multiple threads at
  * the same time.
+ *
+ * MultithreadEventLoopGroup 实现 EventLoopGroup 接口，继承 MultithreadEventExecutorGroup 接口，
+ * 所有该类可以利用 EventExecutor 创建 EventLoopGroup，又可以利用 EventLoopGroup 把 Channel 注册 EventLoop 上
  */
 public abstract class MultithreadEventLoopGroup extends MultithreadEventExecutorGroup implements EventLoopGroup {
 
@@ -38,6 +41,8 @@ public abstract class MultithreadEventLoopGroup extends MultithreadEventExecutor
     private static final int DEFAULT_EVENT_LOOP_THREADS;
 
     static {
+        // 默认 EventLoopGroup 拥有的 EventLoop 数量是 可用CPU数 * 2
+        // 为什么是 * 2呢？因为一个CPU可对应2个线程
         DEFAULT_EVENT_LOOP_THREADS = Math.max(1, SystemPropertyUtil.getInt(
                 "io.netty.eventLoopThreads", NettyRuntime.availableProcessors() * 2));
 
@@ -69,6 +74,9 @@ public abstract class MultithreadEventLoopGroup extends MultithreadEventExecutor
         super(nThreads == 0 ? DEFAULT_EVENT_LOOP_THREADS : nThreads, executor, chooserFactory, args);
     }
 
+    /**
+     * 覆盖父类 newDefaultThreadFactory() ,设置优先级
+     */
     @Override
     protected ThreadFactory newDefaultThreadFactory() {
         return new DefaultThreadFactory(getClass(), Thread.MAX_PRIORITY);

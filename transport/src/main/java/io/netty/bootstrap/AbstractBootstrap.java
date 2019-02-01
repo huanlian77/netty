@@ -350,7 +350,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
 		Channel channel = null;
 		try {
 			// 通过 Channel 工厂创建 Channel
-			// 创建 Channel 会设置 Channel 为非阻塞，监听的事件，初始化 ChannelPipeline，ChannelHandlerContext(ChannelHandlerContext链表结构)
+			// 创建 Channel 会设置 Channel 为非阻塞，监听的事件，设置channelId，初始化 Unsafe，ChannelPipeline，ChannelHandlerContext(ChannelHandlerContext链表结构)
 			channel = channelFactory.newChannel();
 			// 初始化 Channel 配置
 			init(channel);

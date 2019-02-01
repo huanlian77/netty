@@ -55,8 +55,14 @@ import static io.netty.channel.internal.ChannelUtils.MAX_BYTES_PER_GATHERING_WRI
  */
 public class NioSocketChannel extends AbstractNioByteChannel implements io.netty.channel.socket.SocketChannel {
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(NioSocketChannel.class);
+    /**
+     * 默认的 SelectorProvider
+     */
     private static final SelectorProvider DEFAULT_SELECTOR_PROVIDER = SelectorProvider.provider();
 
+    /**
+     * 通过 SelectorProvider.openSocketChannel 获取 SocketChannel
+     */
     private static SocketChannel newSocket(SelectorProvider provider) {
         try {
             /**
@@ -102,6 +108,7 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
      */
     public NioSocketChannel(Channel parent, SocketChannel socket) {
         super(parent, socket);
+        // NioSocketChannel 配置项
         config = new NioSocketChannelConfig(this, socket.socket());
     }
 
@@ -303,13 +310,16 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
 
     @Override
     protected boolean doConnect(SocketAddress remoteAddress, SocketAddress localAddress) throws Exception {
+        // 绑定本地地址
         if (localAddress != null) {
             doBind0(localAddress);
         }
 
         boolean success = false;
         try {
+            // 连接远程地址，调用 JDK 的 SocketChannel.connect()
             boolean connected = SocketUtils.connect(javaChannel(), remoteAddress);
+            // 若未完成连接，则关注连接（OP_CONNECT）事件
             if (!connected) {
                 selectionKey().interestOps(SelectionKey.OP_CONNECT);
             }

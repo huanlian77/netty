@@ -22,59 +22,63 @@ import java.nio.channels.spi.SelectorProvider;
 import java.util.Set;
 
 final class SelectedSelectionKeySetSelector extends Selector {
-    private final SelectedSelectionKeySet selectionKeys;
-    private final Selector delegate;
+	private final SelectedSelectionKeySet selectionKeys;
+	private final Selector delegate;
 
-    SelectedSelectionKeySetSelector(Selector delegate, SelectedSelectionKeySet selectionKeys) {
-        this.delegate = delegate;
-        this.selectionKeys = selectionKeys;
-    }
+	SelectedSelectionKeySetSelector(Selector delegate, SelectedSelectionKeySet selectionKeys) {
+		this.delegate = delegate;
+		this.selectionKeys = selectionKeys;
+	}
 
-    @Override
-    public boolean isOpen() {
-        return delegate.isOpen();
-    }
+	@Override
+	public boolean isOpen() {
+		return delegate.isOpen();
+	}
 
-    @Override
-    public SelectorProvider provider() {
-        return delegate.provider();
-    }
+	@Override
+	public SelectorProvider provider() {
+		return delegate.provider();
+	}
 
-    @Override
-    public Set<SelectionKey> keys() {
-        return delegate.keys();
-    }
+	@Override
+	public Set<SelectionKey> keys() {
+		return delegate.keys();
+	}
 
-    @Override
-    public Set<SelectionKey> selectedKeys() {
-        return delegate.selectedKeys();
-    }
+	@Override
+	public Set<SelectionKey> selectedKeys() {
+		return delegate.selectedKeys();
+	}
 
-    @Override
-    public int selectNow() throws IOException {
-        selectionKeys.reset();
-        return delegate.selectNow();
-    }
+	@Override
+	public int selectNow() throws IOException {
+		selectionKeys.reset();
+		return delegate.selectNow();
+	}
 
-    @Override
-    public int select(long timeout) throws IOException {
-        selectionKeys.reset();
-        return delegate.select(timeout);
-    }
+	/**
+	 * 在调用 JDK NIO Selector 之前,都会调用  SelectedSelectionKeySet#reset() ,重置 selectionKeys,
+	 * 从而实现,每次 select 之后,都是新的 selectionKeys
+	 */
+	@Override
+	public int select(long timeout) throws IOException {
+		selectionKeys.reset();
+		return delegate.select(timeout);
+	}
 
-    @Override
-    public int select() throws IOException {
-        selectionKeys.reset();
-        return delegate.select();
-    }
+	@Override
+	public int select() throws IOException {
+		selectionKeys.reset();
+		return delegate.select();
+	}
 
-    @Override
-    public Selector wakeup() {
-        return delegate.wakeup();
-    }
+	@Override
+	public Selector wakeup() {
+		return delegate.wakeup();
+	}
 
-    @Override
-    public void close() throws IOException {
-        delegate.close();
-    }
+	@Override
+	public void close() throws IOException {
+		delegate.close();
+	}
 }

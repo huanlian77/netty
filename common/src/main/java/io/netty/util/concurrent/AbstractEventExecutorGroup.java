@@ -87,6 +87,8 @@ public abstract class AbstractEventExecutorGroup implements EventExecutorGroup {
         return Collections.emptyList();
     }
 
+
+    //=========== invokeAll()在 EventExecutor 中执行多个普通任务，并且多个任务使用同一个EventExecutor======================
     @Override
     public <T> List<java.util.concurrent.Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
             throws InterruptedException {
@@ -99,15 +101,16 @@ public abstract class AbstractEventExecutorGroup implements EventExecutorGroup {
         return next().invokeAll(tasks, timeout, unit);
     }
 
-    @Override
-    public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
-        return next().invokeAny(tasks);
-    }
-
+    //=========== invokeAny()在 EventExecutor 中执行多个任务，有一个任务完成即可
     @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
             throws InterruptedException, ExecutionException, TimeoutException {
         return next().invokeAny(tasks, timeout, unit);
+    }
+
+    @Override
+    public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
+        return next().invokeAny(tasks);
     }
 
     @Override

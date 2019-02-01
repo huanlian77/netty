@@ -27,13 +27,30 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Abstract base class for {@link EventExecutorGroup} implementations that handles their tasks with multiple threads at
  * the same time.
+ *
+ * 基于多线程的 EventExecutor
  */
 public abstract class MultithreadEventExecutorGroup extends AbstractEventExecutorGroup {
 
+    /**
+     * EventExecutor 数组
+     */
     private final EventExecutor[] children;
+    /**
+     * 只读的 EventExecutor 数组
+     */
     private final Set<EventExecutor> readonlyChildren;
+    /**
+     * 已终止的 EventExecutor 数量
+     */
     private final AtomicInteger terminatedChildren = new AtomicInteger();
+    /**
+     * 用于终止 EventExecutor 的异步 Future
+     */
     private final Promise<?> terminationFuture = new DefaultPromise(GlobalEventExecutor.INSTANCE);
+    /**
+     * EventExecutor 选择器
+     */
     private final EventExecutorChooserFactory.EventExecutorChooser chooser;
 
     /**
@@ -72,26 +89,32 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
             throw new IllegalArgumentException(String.format("nThreads: %d (expected: > 0)", nThreads));
         }
 
+        // 创建执行器
         if (executor == null) {
             executor = new ThreadPerTaskExecutor(newDefaultThreadFactory());
         }
 
+        // 创建 EventExecutor 数组
         children = new EventExecutor[nThreads];
 
         for (int i = 0; i < nThreads; i ++) {
             boolean success = false;
             try {
+                // 创建 EventExecutor 对象，newChild() 具体实现是其子类
+                // 例如子类 NioEventLoopGroup.newChild() 实际就是 NioEventLoop
                 children[i] = newChild(executor, args);
                 success = true;
             } catch (Exception e) {
                 // TODO: Think about if this is a good exception type
                 throw new IllegalStateException("failed to create a child event loop", e);
             } finally {
+            	// 创建失败，关闭所有已创建的 EventExecutor
                 if (!success) {
+                	// 优雅关闭
                     for (int j = 0; j < i; j ++) {
                         children[j].shutdownGracefully();
                     }
-
+					// 确保所有已创建的 EventExecutor 已关闭
                     for (int j = 0; j < i; j ++) {
                         EventExecutor e = children[j];
                         try {
@@ -108,8 +131,11 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
             }
         }
 
+        // 创建 EventExecutor 选择器，当调用 next() 时会按规则返回一个 EventExecutor
+	    // 有两种选择，分别是 PowerOfTwoEventExecutorChooser 和 GenericEventExecutorChooser
         chooser = chooserFactory.newChooser(children);
 
+        // 创建监听器，用于 EventExecutor 终止时的监听
         final FutureListener<Object> terminationListener = new FutureListener<Object>() {
             @Override
             public void operationComplete(Future<Object> future) throws Exception {
@@ -119,16 +145,21 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
             }
         };
 
+        // 设置监听器到每个 EventExecutor 上
         for (EventExecutor e: children) {
             e.terminationFuture().addListener(terminationListener);
         }
 
+        // 创建制度的 EventExecutor 数组
         Set<EventExecutor> childrenSet = new LinkedHashSet<EventExecutor>(children.length);
         Collections.addAll(childrenSet, children);
         readonlyChildren = Collections.unmodifiableSet(childrenSet);
     }
 
-    protected ThreadFactory newDefaultThreadFactory() {
+	/**
+	 * 线程工厂，使用默认的线程工厂，使用类名做 poolType
+	 */
+	protected ThreadFactory newDefaultThreadFactory() {
         return new DefaultThreadFactory(getClass());
     }
 
@@ -140,7 +171,10 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
         return chooser.next();
     }
 
-    @Override
+	/**
+	 * 只读的 EventExecutor 进行迭代
+	 */
+	@Override
     public Iterator<EventExecutor> iterator() {
         return readonlyChildren.iterator();
     }
@@ -148,6 +182,8 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
     /**
      * Return the number of {@link EventExecutor} this implementation uses. This number is the maps
      * 1:1 to the threads it use.
+     *
+     * 统计 EventExecutor 数组大小，该大小等于线程数
      */
     public final int executorCount() {
         return children.length;

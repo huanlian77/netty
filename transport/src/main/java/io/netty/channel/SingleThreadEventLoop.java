@@ -32,6 +32,9 @@ import java.util.concurrent.ThreadFactory;
  */
 public abstract class SingleThreadEventLoop extends SingleThreadEventExecutor implements EventLoop {
 
+    /**
+     * 默认任务队列最大数量
+     */
     protected static final int DEFAULT_MAX_PENDING_TASKS = Math.max(16,
             SystemPropertyUtil.getInt("io.netty.eventLoop.maxPendingTasks", Integer.MAX_VALUE));
 
@@ -59,18 +62,29 @@ public abstract class SingleThreadEventLoop extends SingleThreadEventExecutor im
         tailTasks = newTaskQueue(maxPendingTasks);
     }
 
+    /**
+     * 获取所属 EventLoopGroup
+     */
     @Override
     public EventLoopGroup parent() {
         return (EventLoopGroup) super.parent();
     }
 
+    /**
+     * 返回 EventLoop （其实就是自己，或者子类）
+     */
     @Override
     public EventLoop next() {
         return (EventLoop) super.next();
     }
 
+    /**
+     * 注册 Channel 到 EventLoop 上
+     */
     @Override
     public ChannelFuture register(Channel channel) {
+        // 将 channel 和 EventLoop 创建一个 DefaultChannelPromise 对象
+        // DefaultChannelPromise 对象对异步注册过程的监听
         return register(new DefaultChannelPromise(channel, this));
     }
 
@@ -109,14 +123,19 @@ public abstract class SingleThreadEventLoop extends SingleThreadEventExecutor im
     @UnstableApi
     public final void executeAfterEventLoopIteration(Runnable task) {
         ObjectUtil.checkNotNull(task, "task");
+
+        // 关闭时，拒绝任务
         if (isShutdown()) {
             reject();
         }
 
+        // 添加到任务队列
         if (!tailTasks.offer(task)) {
+            // 添加失败，则拒绝任务
             reject(task);
         }
 
+        // 唤醒任务
         if (wakesUpForTask(task)) {
             wakeup(inEventLoop());
         }
@@ -149,6 +168,10 @@ public abstract class SingleThreadEventLoop extends SingleThreadEventExecutor im
         return super.hasTasks() || !tailTasks.isEmpty();
     }
 
+    /**
+     * 获取队列中的任务数，计算两个队列任务之和
+     * @return
+     */
     @Override
     public int pendingTasks() {
         return super.pendingTasks() + tailTasks.size();

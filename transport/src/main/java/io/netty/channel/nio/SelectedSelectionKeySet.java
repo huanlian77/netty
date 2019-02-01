@@ -21,9 +21,17 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+/**
+ * Netty 自己实现的 SelectionKey,对 Java 的 SelectionKey 进行了优化
+ *
+ * 用来保存已经 Selector.select() 的 NIO SelectionKey 集合
+ */
 final class SelectedSelectionKeySet extends AbstractSet<SelectionKey> {
 
     SelectionKey[] keys;
+    /**
+     * 数组大小,默认是1024
+     */
     int size;
 
     SelectedSelectionKeySet() {
@@ -37,6 +45,7 @@ final class SelectedSelectionKeySet extends AbstractSet<SelectionKey> {
         }
 
         keys[size++] = o;
+        // 超过数组大小,进行扩容
         if (size == keys.length) {
             increaseCapacity();
         }
@@ -84,15 +93,22 @@ final class SelectedSelectionKeySet extends AbstractSet<SelectionKey> {
         };
     }
 
+
     void reset() {
         reset(0);
     }
 
+    /**
+     * 重置
+     */
     void reset(int start) {
         Arrays.fill(keys, start, size, null);
         size = 0;
     }
 
+    /**
+     * 扩容 System.arraycopy()
+     */
     private void increaseCapacity() {
         SelectionKey[] newKeys = new SelectionKey[keys.length << 1];
         System.arraycopy(keys, 0, newKeys, 0, size);

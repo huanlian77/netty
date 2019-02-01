@@ -470,6 +470,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 				promise.setFailure(new IllegalStateException("registered to an event loop already"));
 				return;
 			}
+			// 判断eventLoop是否兼容，eventLoop instanceof NioEventLoop
 			if (!isCompatible(eventLoop)) {
 				promise.setFailure(
 						new IllegalStateException("incompatible event loop type: " + eventLoop.getClass().getName()));
@@ -520,6 +521,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 				pipeline.invokeHandlerAddedIfNeeded();
 
 				// 回调通知 promise 执行成功
+				// 这个是通知 AbstractBootstrap.doBind() 中的 listener，注册完成后绑定地址
 				safeSetSuccess(promise);
 
 				// 通知已注册事件
