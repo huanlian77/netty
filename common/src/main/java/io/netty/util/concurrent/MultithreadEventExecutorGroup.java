@@ -64,12 +64,11 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
         this(nThreads, threadFactory == null ? null : new ThreadPerTaskExecutor(threadFactory), args);
     }
 
+
     /**
-     * Create a new instance.
+     * 参数3：事情执行选择器工厂
      *
-     * @param nThreads          the number of threads that will be used by this instance.
-     * @param executor          the Executor to use, or {@code null} if the default should be used.
-     * @param args              arguments which will passed to each {@link #newChild(Executor, Object...)} call
+     * 其他参数见 {@link NioEventLoopGroup}
      */
     protected MultithreadEventExecutorGroup(int nThreads, Executor executor, Object... args) {
         this(nThreads, executor, DefaultEventExecutorChooserFactory.INSTANCE, args);
@@ -100,8 +99,8 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
         for (int i = 0; i < nThreads; i ++) {
             boolean success = false;
             try {
-                // 创建 EventExecutor 对象，newChild() 具体实现是其子类
-                // 例如子类 NioEventLoopGroup.newChild() 实际就是 NioEventLoop
+                // 为 EventExecutor 数组进行初始化
+                // 如果创建的是 EventLoopGroup group = new NioEventLoopGroup() 那么 newChild() 方法实际上是创建的 NioEventLoop
                 children[i] = newChild(executor, args);
                 success = true;
             } catch (Exception e) {
@@ -150,7 +149,7 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
             e.terminationFuture().addListener(terminationListener);
         }
 
-        // 创建制度的 EventExecutor 数组
+        // 创建不可变的 EventExecutor Set 集合
         Set<EventExecutor> childrenSet = new LinkedHashSet<EventExecutor>(children.length);
         Collections.addAll(childrenSet, children);
         readonlyChildren = Collections.unmodifiableSet(childrenSet);

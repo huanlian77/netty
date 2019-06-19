@@ -81,8 +81,11 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 	 */
 	protected AbstractChannel(Channel parent) {
 		this.parent = parent;
+		// 为当前 channel 分配一个 channelId
 		id = newId();
+		// 为当前 channel 设置 Unsafe
 		unsafe = newUnsafe();
+		// 为当前 channel 默认的 ChannelPipeline
 		pipeline = newChannelPipeline();
 	}
 
@@ -461,16 +464,20 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 			return remoteAddress0();
 		}
 
+		/**
+		 * 将 Channel 注册到 EventLoop
+		 */
 		@Override
 		public final void register(EventLoop eventLoop, final ChannelPromise promise) {
 			if (eventLoop == null) {
 				throw new NullPointerException("eventLoop");
 			}
+			// 判断 Channel 是否注册到 EvenLoop 上
 			if (isRegistered()) {
 				promise.setFailure(new IllegalStateException("registered to an event loop already"));
 				return;
 			}
-			// 判断eventLoop是否兼容，eventLoop instanceof NioEventLoop
+			// 判断 EventLoop 是否是 NioEventLoop，判断条件 eventLoop instanceof NioEventLoop
 			if (!isCompatible(eventLoop)) {
 				promise.setFailure(
 						new IllegalStateException("incompatible event loop type: " + eventLoop.getClass().getName()));
@@ -479,7 +486,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 
 			AbstractChannel.this.eventLoop = eventLoop;
 
-			// 判断当前线程是不是 EventLoop，如果是直接调用 register0()，如果不是 eventLoop.execute() 开启一个线程执行
+			// 判断当前线程是不是 EventLoop，如果是直接调用 register0()，如果不是使用 eventLoop。execute() 来调用 register0()
 			if (eventLoop.inEventLoop()) {
 				register0(promise);
 			} else {
@@ -505,8 +512,8 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 			try {
 				// check if the channel is still open as it could be closed in the mean time when the register
 				// call was outside of the eventLoop
-				if (!promise.setUncancellable()
-						|| !ensureOpen(promise)) { // 确保 Channel  是打开的
+				// 保证 promise 是可以关闭的并且 channel 是打开的
+				if (!promise.setUncancellable() || !ensureOpen(promise)) { // 确保 Channel  是打开的
 					return;
 				}
 				// 记录首次注册

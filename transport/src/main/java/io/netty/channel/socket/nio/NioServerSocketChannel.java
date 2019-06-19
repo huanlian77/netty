@@ -47,8 +47,7 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
 
 	private static final ChannelMetadata METADATA = new ChannelMetadata(false, 16);
 	/**
-	 * 默认的SelectorProvider
-	 * 在 Java NIO 网络编程时，SocketChannel、ServerSocketChannel和Selector的实例初始化都通过SelectorProvider类实现
+	 * 在 Java NIO 网络编程时，SocketChannel、ServerSocketChannel 和 Selector 的实例初始化都通过 SelectorProvider 类实现
 	 */
 	private static final SelectorProvider DEFAULT_SELECTOR_PROVIDER = SelectorProvider.provider();
 
@@ -64,6 +63,8 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
 			 *  {@link SelectorProvider#provider()} which is called by each ServerSocketChannel.open() otherwise.
 			 *
 			 *  See <a href="https://github.com/netty/netty/issues/2308">#2308</a>.
+			 *
+			 *  provider.openServerSocketChannel() 获取 Java NIO 网络编程中的 ServerSocketChannel
 			 */
 			return provider.openServerSocketChannel();
 		} catch (IOException e) {
@@ -92,7 +93,9 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
 	 * Create a new instance using the given {@link ServerSocketChannel}.
 	 */
 	public NioServerSocketChannel(ServerSocketChannel channel) {
+		// 调用父类，并传入 SelectionKey.OP_ACCEPT 注册事件，服务端接收新的连接。
 		super(null, channel, SelectionKey.OP_ACCEPT);
+		// 设置 ServerSocketChannelConfig 属性，javaChannel() 是从父类 AbstractNioChannel 中获取 channel，并通过 socket 获取 ServerSocket
 		config = new NioServerSocketChannelConfig(this, javaChannel().socket());
 	}
 

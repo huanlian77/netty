@@ -59,7 +59,7 @@ public final class EchoServer {
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         // 创建 workerGroup 线程组用于 SocketChannel 的数据读写
         EventLoopGroup workerGroup = new NioEventLoopGroup();
-        // 自定义的 ChannelHanlder
+        // 自定义的 ChannelHandler
         final EchoServerHandler serverHandler = new EchoServerHandler();
         try {
             // 服务器启动服务类

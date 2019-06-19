@@ -82,9 +82,12 @@ public abstract class AbstractNioChannel extends AbstractChannel {
 	 */
 	protected AbstractNioChannel(Channel parent, SelectableChannel ch, int readInterestOp) {
 		super(parent);
+		// 保存 channel
 		this.ch = ch;
+		// 保存注册事件
 		this.readInterestOp = readInterestOp;
 		try {
+			// 设置为非阻塞的
 			ch.configureBlocking(false);
 		} catch (IOException e) {
 			try {
@@ -408,7 +411,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
 		boolean selected = false;
 		for (; ; ) {
 			try {
-				// 调用 JDK 的 register() 进行事件注册
+				// 调用 JDK 的 Channel.register() 进行事件注册
 				selectionKey = javaChannel().register(eventLoop().unwrappedSelector(), 0, this);
 				return;
 			} catch (CancelledKeyException e) {

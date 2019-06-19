@@ -84,6 +84,11 @@ public class NioEventLoopGroup extends MultithreadEventLoopGroup {
 
     public NioEventLoopGroup(int nThreads, Executor executor, final SelectorProvider selectorProvider,
                              final SelectStrategyFactory selectStrategyFactory) {
+        // 参数1：线程数
+        // 参数2：执行器
+        // 参数3：在 Java NIO 网络编程时，SocketChannel、ServerSocketChannel 和 Selector 的实例初始化都通过 SelectorProvider 类实现
+        // 参数4：多路复用 select 策略
+        // 参数5：拒绝策略，这里策略采用直接抛出 RejectedExecutionException 异常
         super(nThreads, executor, selectorProvider, selectStrategyFactory, RejectedExecutionHandlers.reject());
     }
 
