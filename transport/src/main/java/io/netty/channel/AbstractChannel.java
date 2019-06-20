@@ -484,6 +484,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 				return;
 			}
 
+			// 重点！！！这行代码表示当前 Channel 与 EventLoop 进行绑定了
 			AbstractChannel.this.eventLoop = eventLoop;
 
 			// 判断当前线程是不是 EventLoop，如果是直接调用 register0()，如果不是使用 eventLoop。execute() 来调用 register0()
