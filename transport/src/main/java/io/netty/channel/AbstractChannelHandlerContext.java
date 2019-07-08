@@ -47,26 +47,42 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
 
     /**
      * {@link ChannelHandler#handlerAdded(ChannelHandlerContext)} is about to be called.
+     * 添加准备中
      */
     private static final int ADD_PENDING = 1;
     /**
      * {@link ChannelHandler#handlerAdded(ChannelHandlerContext)} was called.
+     * 已添加
      */
     private static final int ADD_COMPLETE = 2;
     /**
      * {@link ChannelHandler#handlerRemoved(ChannelHandlerContext)} was called.
+     * 已移除
      */
     private static final int REMOVE_COMPLETE = 3;
     /**
      * Neither {@link ChannelHandler#handlerAdded(ChannelHandlerContext)}
      * nor {@link ChannelHandler#handlerRemoved(ChannelHandlerContext)} was called.
+     * 初始化
      */
     private static final int INIT = 0;
 
+    /**
+     * 是否是 inbound
+     */
     private final boolean inbound;
+    /**
+     * 是否是 outbound
+     */
     private final boolean outbound;
+    /**
+     * 所属的 ChannelPipeline
+     */
     private final DefaultChannelPipeline pipeline;
     private final String name;
+    /**
+     * 是否使用有序的 EventExecutor
+     */
     private final boolean ordered;
 
     // Will be set to null if no child executor should be used, otherwise it will be set to the
@@ -76,9 +92,21 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
 
     // Lazily instantiated tasks used to trigger events to a handler with different executor.
     // There is no need to make this volatile as at worse it will just create a few more instances then needed.
+    /**
+     * 执行 Channel ReadComplete 事件的任务
+     */
     private Runnable invokeChannelReadCompleteTask;
+    /**
+     * 执行 Channel Read 事件的任务
+     */
     private Runnable invokeReadTask;
+    /**
+     * 执行 Channel WritableStateChanged 事件的任务
+     */
     private Runnable invokeChannelWritableStateChangedTask;
+    /**
+     * 执行 Flush 事件的任务
+     */
     private Runnable invokeFlushTask;
 
     private volatile int handlerState = INIT;
@@ -91,6 +119,7 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
         this.inbound = inbound;
         this.outbound = outbound;
         // Its ordered if its driven by the EventLoop or the given Executor is an instanceof OrderedEventExecutor.
+        // 默认是 OrderedEventExecutor
         ordered = executor == null || executor instanceof OrderedEventExecutor;
     }
 
@@ -195,6 +224,8 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
 
     static void invokeChannelActive(final AbstractChannelHandlerContext next) {
         EventExecutor executor = next.executor();
+        // 判断在 EventLoop 线程中
+        // 调用下一个 Inbound 节点的 Channel Active()
         if (executor.inEventLoop()) {
             next.invokeChannelActive();
         } else {
@@ -208,7 +239,7 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
     }
 
     private void invokeChannelActive() {
-        if (invokeHandler()) {
+        if (invokeHandler()) { // 判断是否符合 ChannelHandler
             try {
                 ((ChannelInboundHandler) handler()).channelActive(this);
             } catch (Throwable t) {
@@ -480,13 +511,14 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
             return promise;
         }
 
-        // 找到 ctx
+        // 找到 ctx , bind() 是 outbound 事件传播,所以从tail -> head 传递. 使用ctx.prev
         final AbstractChannelHandlerContext next = findContextOutbound();
         EventExecutor executor = next.executor();
         // 调用 invokeBind() 进行端口绑定
         if (executor.inEventLoop()) {
             next.invokeBind(localAddress, promise);
         } else {
+            //如果不在 EventLoop中,会调用 safeExecute() 提交到 EventLoop 的线程中
             safeExecute(executor, new Runnable() {
                 @Override
                 public void run() {
@@ -902,11 +934,15 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
         return new FailedChannelFuture(channel(), executor(), cause);
     }
 
+    /**
+     * 判断是否合法的 Promise 对象
+     */
     private boolean isNotValidPromise(ChannelPromise promise, boolean allowVoidPromise) {
         if (promise == null) {
             throw new NullPointerException("promise");
         }
 
+        // 执行结束,完成/异常/取消都返回true
         if (promise.isDone()) {
             // Check if the promise was cancelled and if so signal that the processing of the operation
             // should not be performed.
@@ -927,11 +963,13 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap
             return false;
         }
 
+        // 禁止 VoidChannelPromise
         if (!allowVoidPromise && promise instanceof VoidChannelPromise) {
             throw new IllegalArgumentException(
                     StringUtil.simpleClassName(VoidChannelPromise.class) + " not allowed for this operation");
         }
 
+        // 禁止 CloseFuture
         if (promise instanceof AbstractChannel.CloseFuture) {
             throw new IllegalArgumentException(
                     StringUtil.simpleClassName(AbstractChannel.CloseFuture.class) + " not allowed in a pipeline");
